@@ -3,10 +3,9 @@ import requests
 import base64
 from PIL import Image
 from io import BytesIO
-import json
 
-st.set_page_config(page_title="Giải Bài Tập Từ Ảnh", page_icon="📘")
-st.title("📘 Giải Bài Tập Từ Ảnh (Việt – H’Mông)")
+st.set_page_config(page_title="Gia sư Toán AI", page_icon="📘")
+st.title("📘 Gia sư Toán AI (Hỗ trợ Đa ngôn ngữ)")
 
 # =====================
 # 🔑 NHẬP GOOGLE API KEY
@@ -103,20 +102,27 @@ if image:
         st.image(image, caption="Ảnh đề bài", use_column_width=True)
 
     with col2:
-        st.subheader("🔍 Kết quả giải bài:")
+        st.subheader("🔍 Tùy chọn giải bài:")
+        
+        # Thêm tính năng chọn ngôn ngữ phụ
+        ngon_ngu = st.radio(
+            "Chọn ngôn ngữ song song với Tiếng Việt:",
+            options=["Tiếng H'Mông", "Tiếng Anh"],
+            horizontal=True
+        )
 
         if st.button("Giải bài tập", type="primary"):
 
             if not api_key:
                 st.error("❌ Bạn chưa nhập API Key!")
             else:
-                with st.spinner("⏳ Đang giải bài..."):
+                with st.spinner(f"⏳ Đang giải bài bằng Việt - {ngon_ngu}..."):
                     
                     # ===============================
-                    # 🧠 PROMPT CHUẨN – GIẢI BÀI TẬP
+                    # 🧠 PROMPT CHUẨN – GIẢI BÀI TẬP (ĐÃ ĐỘNG HÓA NGÔN NGỮ)
                     # ===============================
-                    prompt_text = """
-Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo cách NGẮN – DỄ HIỂU – SONG NGỮ (Việt – H’Mông).
+                    prompt_text = f"""
+Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo cách NGẮN – DỄ HIỂU – SONG NGỮ (Việt – {ngon_ngu}).
 
 ==============================
 ⚠️ QUY TẮC CÔNG THỨC TOÁN HỌC
@@ -127,16 +133,16 @@ Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo 
   $$
 - Mỗi phép toán BẮT BUỘC xuống dòng bằng \\\\
 - Dùng đúng LaTeX chuẩn:
-  \frac{}, \sqrt{}, ^{}, _{}, \triangle, \angle, \parallel, \perp
-- TUYỆT ĐỐI KHÔNG sinh ký tự lạ như:   
+  \\frac{{}}, \\sqrt{{}}, ^{{}}, _{{}}, \\triangle, \\angle, \\parallel, \\perp
+- TUYỆT ĐỐI KHÔNG sinh ký tự lạ.
 - Không ghép nhiều công thức trên 1 dòng.
-- Đơn vị viết dạng: 150\,m ; 30\,cm
+- Đơn vị viết dạng: 150\\,m ; 30\\,cm
 
 =====================
 1️⃣ CHÉP LẠI ĐỀ BÀI
 =====================
 - Dòng 1: Đề bài tiếng Việt (ngắn gọn).
-- Dòng 2: Dịch sang tiếng H’Mông.
+- Dòng 2: Dịch sang {ngon_ngu}.
 - Dòng 3: Công thức LaTeX rõ ràng, mỗi dòng có \\\\.
 
 ==========================
@@ -144,11 +150,11 @@ Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo 
 ==========================
 Mỗi bước trình bày 3 dòng:
 - Dòng 1: Giải thích tiếng Việt.
-- Dòng 2: Giải thích tiếng H’Mông.
+- Dòng 2: Giải thích {ngon_ngu}.
 - Dòng 3: Công thức LaTeX sạch:
   $$
-  \frac{AP}{AB} = \frac{150}{300} = \frac{1}{2} \\\\
-  AP = 150\,m
+  \\frac{{AP}}{{AB}} = \\frac{{150}}{{300}} = \\frac{{1}}{{2}} \\\\
+  AP = 150\\,m
   $$
 
 ==========================
@@ -156,7 +162,7 @@ Mỗi bước trình bày 3 dòng:
 ==========================
 - Câu ngắn.
 - Mỗi ý xuống dòng.
-- Song ngữ Việt – H’Mông.
+- Song ngữ Việt – {ngon_ngu}.
 - LaTeX sạch – không ký tự lạ.
 """
 
