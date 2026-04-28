@@ -63,7 +63,7 @@ def analyze_math_problem(api_key, image, target_lang):
     image.save(buf, format="JPEG")
     img_b64 = base64.b64encode(buf.getvalue()).decode()
 
-    # Sử dụng mô hình gemini-1.5-flash (ổn định và nhanh nhất hiện nay)
+    # Sử dụng mô hình gemini-2.5-flash
     MODEL = "gemini-2.5-flash"
     URL = f"https://generativelanguage.googleapis.com/v1/models/{MODEL}:generateContent?key={api_key}"
 
