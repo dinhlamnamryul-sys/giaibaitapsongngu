@@ -107,9 +107,9 @@ if image:
         # ⚙️ TÙY CHỌN NGÔN NGỮ
         # ===============================
         st.subheader("⚙️ Tùy chọn ngôn ngữ:")
-        st.markdown("**Tiếng Việt** (Mặc định bắt buộc)")
-        use_hmong = st.checkbox("Thêm Tiếng H’Mông", value=True)
-        use_english = st.checkbox("Thêm Tiếng Anh", value=True)
+        st.markdown("**Tiếng Việt**")
+        use_hmong = st.checkbox("Tiếng Mông", value=True)
+        use_english = st.checkbox("Tiếng Anh", value=True)
         
         st.markdown("---")
         st.subheader("🔍 Kết quả giải bài:")
