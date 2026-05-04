@@ -4,162 +4,120 @@ import base64
 from PIL import Image
 from io import BytesIO
 
-# --- CẤU HÌNH TRANG ---
-st.set_page_config(
-    page_title="Gia sư Toán AI Song ngữ", 
-    page_icon="📘", 
-    layout="wide"
-)
+st.set_page_config(page_title="Chấm Bài AI Song Ngữ", page_icon="📸")
+st.title("📸 Chấm Bài & Giải Toán Qua Ảnh (Việt – H’Mông)")
 
-# --- PHONG CÁCH GIAO DIỆN (CSS CUSTOM) ---
-st.markdown("""
-    <style>
-    .main {
-        background-color: #f5f7f9;
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 10px;
-        height: 3em;
-        background-color: #007bff;
-        color: white;
-        font-weight: bold;
-    }
-    .status-box {
-        padding: 20px;
-        border-radius: 10px;
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        margin-bottom: 20px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# --- LẤY KEY ---
+api_key = st.secrets.get("GOOGLE_API_KEY", "")
 
-# --- SIDEBAR: CÀI ĐẶT ---
-with st.sidebar:
-    st.title("⚙️ Cấu hình hệ thống")
-    st.info("Ứng dụng sử dụng trí tuệ nhân tạo Gemini để hỗ trợ giải toán song ngữ.")
-    
-    api_key = st.text_input("🔑 Nhập Google API Key:", type="password", help="Lấy tại: https://aistudio.google.com/app/apikey")
-    
-    if api_key:
-        st.success("✅ API Key đã sẵn sàng")
-    else:
-        st.warning("⚠️ Vui lòng nhập API Key để bắt đầu")
-        
-    st.markdown("---")
-    st.markdown("### 📘 Hướng dẫn nhanh:")
-    st.write("1. Chụp hoặc tải ảnh đề bài.")
-    st.write("2. Chọn ngôn ngữ mong muốn.")
-    st.write("3. Bấm 'Giải bài tập' và chờ kết quả.")
+if not api_key:
+    st.warning("⚠️ Chưa có API Key trong hệ thống.")
+    api_key = st.text_input("Nhập Google API Key:", type="password")
 
-# --- HÀM XỬ LÝ LOGIC ---
-def analyze_math_problem(api_key, image, target_lang):
-    """Gửi ảnh đến Gemini API và xử lý kết quả."""
+# --- HÀM PHÂN TÍCH ẢNH ---
+def analyze_real_image(api_key, image, prompt):
     if image.mode == "RGBA":
         image = image.convert("RGB")
 
-    buf = BytesIO()
-    image.save(buf, format="JPEG")
-    img_b64 = base64.b64encode(buf.getvalue()).decode()
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # Sử dụng mô hình gemini-2.5-flash
-    MODEL = "gemini-2.5-flash"
-    URL = f"https://generativelanguage.googleapis.com/v1/models/{MODEL}:generateContent?key={api_key}"
-
-    prompt = f"""
-Bạn là một gia sư Toán học tận tâm. Hãy giải bài tập trong ảnh theo phong cách giảng dạy:
-1. Ngôn ngữ: Song ngữ (Tiếng Việt và {target_lang}).
-2. Cấu trúc: 
-   - Chép lại đề bài (Song ngữ).
-   - Giải chi tiết từng bước (Mỗi bước giải thích bằng Tiếng Việt, sau đó đến {target_lang}).
-   - Kết luận đáp số rõ ràng.
-3. Công thức: Sử dụng LaTeX chuẩn, đặt trong khối $$ ... $$. Ví dụ: $$\\frac{{a}}{{b}}$$.
-4. Lưu ý: Nếu ảnh không phải là bài tập Toán, hãy lịch sự từ chối bằng cả hai thứ tiếng.
-"""
+    MODEL = "models/gemini-2.0-flash"
+    url = f"https://generativelanguage.googleapis.com/v1/{MODEL}:generateContent?key={api_key}"
 
     payload = {
-        "contents": [{
-            "role": "user",
-            "parts": [
-                {"text": prompt},
-                {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}
-            ]
-        }]
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": "image/jpeg", "data": img_base64}}
+                ]
+            }
+        ]
     }
 
     try:
-        res = requests.post(URL, json=payload, timeout=30)
-        
-        # Xử lý các mã lỗi phổ biến
-        if res.status_code == 503:
-            return "⚠️ **Hệ thống AI đang quá tải.** Do bạn đang dùng bản miễn phí, vui lòng đợi khoảng 10-20 giây rồi bấm nút 'Giải bài tập' lại nhé!"
-        elif res.status_code == 400:
-            return "❌ **Lỗi:** API Key không hợp lệ hoặc hình ảnh không đúng định dạng."
-        elif res.status_code != 200:
-            return f"❌ **Lỗi hệ thống ({res.status_code}):** {res.text}"
-
-        data = res.json()
-        if "candidates" in data:
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-        else:
-            return "❌ Không thể phân tích nội dung hình ảnh. Hãy thử chụp rõ nét hơn."
-
+        response = requests.post(url, json=payload)
+        if response.status_code != 200:
+            return f"❌ Lỗi API {response.status_code}: {response.text}"
+        data = response.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        return f"❌ **Lỗi kết nối:** {str(e)}. Kiểm tra internet của bạn."
+        return f"❌ Lỗi kết nối: {str(e)}"
 
-# --- GIAO DIỆN CHÍNH ---
-st.title("📘 Gia sư Toán AI Song ngữ")
-st.markdown("---")
 
-col1, col2 = st.columns([1, 1], gap="large")
+# -----------------------------
+# 🚀 **TÍNH NĂNG MỚI: CHỤP CAMERA**
+# -----------------------------
+st.subheader("📷 Hoặc chụp trực tiếp từ Camera")
+camera_photo = st.camera_input("Chụp ảnh bài làm tại đây")
 
-with col1:
-    st.subheader("📸 Bước 1: Cung cấp đề bài")
-    input_method = st.radio("Chọn cách nhập:", ["Chụp ảnh trực tiếp", "Tải ảnh từ máy tính"], horizontal=True)
-    
-    image = None
-    if input_method == "Chụp ảnh trực tiếp":
-        photo = st.camera_input("Quét đề bài:")
-        if photo: image = Image.open(photo)
-    else:
-        upload = st.file_uploader("Chọn tệp hình ảnh (jpg, png):", type=["png", "jpg", "jpeg"])
-        if upload: image = Image.open(upload)
 
-    if image:
-        st.image(image, caption="Ảnh đề bài đã chọn", use_column_width=True)
+# --- GIAO DIỆN TẢI ẢNH ---
+st.subheader("📤 Hoặc tải ảnh bài làm (PNG, JPG)")
+uploaded_file = st.file_uploader("Chọn ảnh:", type=["png", "jpg", "jpeg"])
 
-with col2:
-    st.subheader("🔍 Bước 2: Tùy chọn & Giải bài")
-    target_lang = st.selectbox(
-        "Chọn ngôn ngữ bổ trợ:",
-        ["Tiếng H'Mông", "Tiếng Anh"],
-        help="Kết quả sẽ hiển thị song song Tiếng Việt và ngôn ngữ này."
-    )
-    
-    st.write("") # Tạo khoảng trống
-    
-    if st.button("🚀 BẮT ĐẦU GIẢI BÀI", type="primary"):
-        if not api_key:
-            st.error("Bạn chưa nhập API Key ở menu bên trái!")
-        elif image is None:
-            st.error("Vui lòng chụp hoặc tải ảnh đề bài lên trước.")
-        else:
-            with st.spinner(f"⏳ Trợ lý AI đang giải toán (Việt - {target_lang})..."):
-                result = analyze_math_problem(api_key, image, target_lang)
-                
-                st.markdown("### 📝 Kết quả giải chi tiết:")
-                st.markdown(result)
-                
-                if not result.startswith("⚠️") and not result.startswith("❌"):
-                    st.balloons()
-                    st.download_button(
-                        label="📥 Tải lời giải về máy (.txt)",
-                        data=result,
-                        file_name="loi_giai_toan.txt",
-                        mime="text/plain"
-                    )
 
-# --- CHÂN TRANG ---
-st.markdown("---")
-st.caption("Dự án tham gia cuộc thi Sáng tạo Thanh thiếu niên - Hỗ trợ học tập cho học sinh vùng cao.")
+# --- CHỌN NGUỒN ẢNH ƯU TIÊN ---
+image = None
+
+if camera_photo is not None:
+    image = Image.open(camera_photo)
+elif uploaded_file is not None:
+    image = Image.open(uploaded_file)
+
+
+# Nếu có ảnh → hiển thị + xử lý
+if image:
+    col1, col2 = st.columns([1, 1.5])
+
+    with col1:
+        st.image(image, caption="Ảnh bài làm", use_column_width=True)
+
+    with col2:
+        st.subheader("🔍 Kết quả:")
+
+        if st.button("Phân tích ngay", type="primary"):
+            if not api_key:
+                st.error("Thiếu API Key!")
+            else:
+                with st.spinner("⏳ AI đang xử lý..."):
+
+                    # --- PROMPT SONG NGỮ ---
+                    prompt_text = """
+Bạn là giáo viên Toán giỏi, đọc ảnh bài làm của học sinh. 
+Yêu cầu:
+
+1️⃣ Chép lại đề bài bằng **LaTeX**, hiển thị song song:
+🇻🇳 (Tiếng Việt)
+🟦 (Tiếng H’Mông)
+
+2️⃣ Chấm bài từng bước:
+- Nói học sinh **Đúng / Sai** từng bước.
+- Nếu sai, ghi ngắn gọn **Sai ở bước nào & lý do**.
+- Hiển thị song song:
+🇻🇳 Nhận xét tiếng Việt
+🟦 Nhận xét H’Mông
+
+3️⃣ Giải chi tiết:
+- Viết từng bước bằng **LaTeX**, hiển thị song song:
+🇻🇳 Công thức / bước bằng tiếng Việt
+🟦 Công thức / bước bằng tiếng H’Mông
+- Nếu học sinh sai → giải lại đúng ở cả hai ngôn ngữ.
+
+MỌI CÂU TRẢ LỜI PHẢI:
+- Rõ ràng, đầy đủ, theo thứ tự.
+- Song song Việt – H’Mông từng bước.
+- Dễ copy vào Word hoặc Overleaf.
+"""
+
+                    result = analyze_real_image(api_key, image, prompt_text)
+
+                    if "❌" in result:
+                        st.error(result)
+                    else:
+                        st.success("🎉 Đã phân tích xong!")
+                        st.markdown(result)
+
