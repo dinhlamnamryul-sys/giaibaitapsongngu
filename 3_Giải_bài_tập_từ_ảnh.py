@@ -115,7 +115,8 @@ if image:
                     # ===============================
                     # 🧠 PROMPT CHUẨN – GIẢI BÀI TẬP
                     # ===============================
-                    prompt_text = """
+                    # Đã thêm tiền tố 'r' vào chuỗi để tránh lỗi ký tự escape trong LaTeX
+                    prompt_text = r"""
 Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo cách NGẮN – DỄ HIỂU – SONG NGỮ (Việt – H’Mông).
 
 ==============================
@@ -123,12 +124,13 @@ Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo 
 ==============================
 - Tất cả công thức phải đặt trong khối:
   $$
-  ... \\\\
+  ... \\
   $$
-- Mỗi phép toán BẮT BUỘC xuống dòng bằng \\\\
+- Công thức trong dòng dùng cặp dấu $...$
+- Mỗi phép toán BẮT BUỘC xuống dòng bằng \\
 - Dùng đúng LaTeX chuẩn:
   \frac{}, \sqrt{}, ^{}, _{}, \triangle, \angle, \parallel, \perp
-- TUYỆT ĐỐI KHÔNG sinh ký tự lạ như:   
+- TUYỆT ĐỐI KHÔNG sinh ký tự lạ.
 - Không ghép nhiều công thức trên 1 dòng.
 - Đơn vị viết dạng: 150\,m ; 30\,cm
 
@@ -137,7 +139,7 @@ Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo 
 =====================
 - Dòng 1: Đề bài tiếng Việt (ngắn gọn).
 - Dòng 2: Dịch sang tiếng H’Mông.
-- Dòng 3: Công thức LaTeX rõ ràng, mỗi dòng có \\\\.
+- Dòng 3: Công thức LaTeX rõ ràng, mỗi dòng có \\.
 
 ==========================
 2️⃣ GIẢI BÀI TẬP (SONG NGỮ)
@@ -147,7 +149,7 @@ Mỗi bước trình bày 3 dòng:
 - Dòng 2: Giải thích tiếng H’Mông.
 - Dòng 3: Công thức LaTeX sạch:
   $$
-  \frac{AP}{AB} = \frac{150}{300} = \frac{1}{2} \\\\
+  \frac{AP}{AB} = \frac{150}{300} = \frac{1}{2} \\
   AP = 150\,m
   $$
 
