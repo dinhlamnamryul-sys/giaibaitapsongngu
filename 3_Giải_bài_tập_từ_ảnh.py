@@ -6,7 +6,7 @@ from io import BytesIO
 import json
 
 st.set_page_config(page_title="Giải Bài Tập Từ Ảnh", page_icon="📘")
-st.title("📘 Giải Bài Tập Từ Ảnh (Việt – H’Mông)")
+st.title("📘 Giải Bài Tập Từ Ảnh Đa Ngữ")
 
 # =====================
 # 🔑 NHẬP GOOGLE API KEY
@@ -103,6 +103,15 @@ if image:
         st.image(image, caption="Ảnh đề bài", use_column_width=True)
 
     with col2:
+        # ===============================
+        # ⚙️ TÙY CHỌN NGÔN NGỮ
+        # ===============================
+        st.subheader("⚙️ Tùy chọn ngôn ngữ:")
+        st.markdown("**Tiếng Việt** (Mặc định bắt buộc)")
+        use_hmong = st.checkbox("Thêm Tiếng H’Mông", value=True)
+        use_english = st.checkbox("Thêm Tiếng Anh", value=True)
+        
+        st.markdown("---")
         st.subheader("🔍 Kết quả giải bài:")
 
         if st.button("Giải bài tập", type="primary"):
@@ -112,54 +121,60 @@ if image:
             else:
                 with st.spinner("⏳ Đang giải bài..."):
                     
+                    # Cấu trúc chuỗi ngôn ngữ dựa trên lựa chọn
+                    langs_requested = ["Việt"]
+                    if use_hmong: langs_requested.append("H’Mông")
+                    if use_english: langs_requested.append("Anh")
+                    lang_str = " – ".join(langs_requested)
+                    
+                    # Tạo hướng dẫn chép đề bài động
+                    chep_de = "- Dòng 1: Tiếng Việt.\n"
+                    line_idx = 2
+                    if use_hmong:
+                        chep_de += f"- Dòng {line_idx}: Tiếng H’Mông.\n"
+                        line_idx += 1
+                    if use_english:
+                        chep_de += f"- Dòng {line_idx}: Tiếng Anh.\n"
+                        
+                    # Tạo hướng dẫn giải bài tập động
+                    giai_bai = "- Tiếng Việt: [Nội dung giải thích]\n"
+                    if use_hmong:
+                        giai_bai += "- Tiếng H’Mông: [Nội dung giải thích]\n"
+                    if use_english:
+                        giai_bai += "- Tiếng Anh: [Nội dung giải thích]\n"
+
                     # ===============================
-                    # 🧠 PROMPT CHUẨN – GIẢI BÀI TẬP
+                    # 🧠 PROMPT CHUẨN – GIÁO VIÊN ĐA NĂNG
                     # ===============================
-                    # Đã thêm tiền tố 'r' vào chuỗi để tránh lỗi ký tự escape trong LaTeX
-                    prompt_text = r"""
-Bạn là giáo viên Toán giỏi. Hãy **giải bài tập trong ảnh** theo cách NGẮN – DỄ HIỂU – SONG NGỮ (Việt – H’Mông).
+                    prompt_text = fr"""
+Bạn là một giáo viên đa năng xuất sắc. Hãy **giải bài tập trong ảnh** (bất kể là môn Toán, Lý, Hóa, Văn, Anh...) theo cách NGẮN – DỄ HIỂU – ĐA NGỮ ({lang_str}).
 
 ==============================
-⚠️ QUY TẮC CÔNG THỨC TOÁN HỌC
+⚠️ QUY TẮC TRÌNH BÀY
 ==============================
-- Tất cả công thức phải đặt trong khối:
+- Nếu có công thức (Toán, Lý, Hóa), hãy đặt trong khối:
   $$
   ... \\
   $$
-- Công thức trong dòng dùng cặp dấu $...$
-- Mỗi phép toán BẮT BUỘC xuống dòng bằng \\
-- Dùng đúng LaTeX chuẩn:
-  \frac{}, \sqrt{}, ^{}, _{}, \triangle, \angle, \parallel, \perp
-- TUYỆT ĐỐI KHÔNG sinh ký tự lạ.
-- Không ghép nhiều công thức trên 1 dòng.
-- Đơn vị viết dạng: 150\,m ; 30\,cm
+  Và dùng chuẩn LaTeX. TUYỆT ĐỐI KHÔNG sinh ký tự lạ.
+- Nếu là bài tập lý thuyết/chữ, trình bày rõ ràng từng đoạn, không cần gượng ép dùng công thức.
 
 =====================
-1️⃣ CHÉP LẠI ĐỀ BÀI
+1️⃣ CHÉP LẠI ĐỀ BÀI (Tóm tắt)
 =====================
-- Dòng 1: Đề bài tiếng Việt (ngắn gọn).
-- Dòng 2: Dịch sang tiếng H’Mông.
-- Dòng 3: Công thức LaTeX rõ ràng, mỗi dòng có \\.
+{chep_de.strip()}
 
 ==========================
-2️⃣ GIẢI BÀI TẬP (SONG NGỮ)
+2️⃣ GIẢI BÀI TẬP (ĐA NGỮ)
 ==========================
-Mỗi bước trình bày 3 dòng:
-- Dòng 1: Giải thích tiếng Việt.
-- Dòng 2: Giải thích tiếng H’Mông.
-- Dòng 3: Công thức LaTeX sạch:
-  $$
-  \frac{AP}{AB} = \frac{150}{300} = \frac{1}{2} \\
-  AP = 150\,m
-  $$
+Trình bày từng bước logic:
+{giai_bai.strip()}
+- Công thức (nếu có): Đặt trong khối $$...$$
 
 ==========================
 3️⃣ TRÌNH BÀY RÕ RÀNG
 ==========================
-- Câu ngắn.
-- Mỗi ý xuống dòng.
-- Song ngữ Việt – H’Mông.
-- LaTeX sạch – không ký tự lạ.
+- Câu ngắn, xuống dòng rõ ràng.
 """
 
                     result = analyze_real_image(api_key, image, prompt_text)
