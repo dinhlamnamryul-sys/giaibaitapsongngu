@@ -5,8 +5,8 @@ from PIL import Image
 from io import BytesIO
 import json
 
-st.set_page_config(page_title="Giải Bài Tập Từ Ảnh", page_icon="📘")
-st.title("📘 Giải Bài Tập Từ Ảnh Đa Ngôn Ngữ")
+st.set_page_config(page_title="Giải Bài Tập Đa Ngôn Ngữ", page_icon="📘")
+st.title("📘 Giải Bài Tập Đa Ngôn Ngữ")
 
 # =====================
 # 🔑 NHẬP GOOGLE API KEY
